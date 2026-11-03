@@ -36,3 +36,11 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify published website
+        run: node scripts/verify-deployment.mjs
+        env:
+          PUBLISHED_URL: ${{ steps.deployment.outputs.page_url }}
