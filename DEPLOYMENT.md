@@ -1,0 +1,70 @@
+# 部署说明
+
+## 1. GitHub Pages 前端
+
+仓库：`masterlkk/luck-letter`。
+
+1. 在仓库的 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+2. `.github/workflows/pages.yml` 在推送 `main` 后运行测试、构建静态前端并发布。
+3. 在 **Actions → Test and deploy GitHub Pages** 检查 `deploy` 成功，并以工作流输出的 URL 为准。
+
+预期的默认地址为 `https://masterlkk.github.io/luck-letter/`；只有部署成功并检查返回内容后，才能视为已上线。
+
+没有后端时页面会使用基础体验版。真实 AI 和公开评价需要下面的服务端。
+
+## 2. Cloudflare Worker + D1
+
+需要你自己的 Cloudflare 账户。可在 Cloudflare 控制台创建 D1 数据库 `luck-letter`，复制数据库 ID。
+
+本机部署步骤（在项目目录执行）：
+
+```sh
+npm run build
+npx --yes wrangler@4 login
+```
+
+将 `wrangler.jsonc` 中 `REPLACE_WITH_D1_DATABASE_ID` 替换为 D1 数据库 ID，然后执行：
+
+```sh
+npx --yes wrangler@4 d1 migrations apply luck-letter --remote
+npx --yes wrangler@4 secret put DEEPSEEK_API_KEY
+npx --yes wrangler@4 secret put RATE_LIMIT_SALT
+npx --yes wrangler@4 deploy
+```
+
+`secret put` 会以交互方式接收密钥，避免写入命令参数和仓库。`RATE_LIMIT_SALT` 使用一段足够长的随机字符。`DEEPSEEK_API_KEY` 从你自己的 DeepSeek 开放平台获取。
+
+部署成功后，Worker 同时可以提供整站页面、`/api/status`、`/api/analyze`、`/api/reviews`，并在 D1 保存公开评价与限流计数。默认允许的外部前端来源为 `https://masterlkk.github.io`；如果使用自定义域名，更新 `ALLOWED_ORIGINS`（多个来源以逗号分隔）。
+
+## 3. 把 GitHub Pages 接到后端
+
+在 GitHub 仓库的 **Settings → Secrets and variables → Actions → Variables** 添加：
+
+```text
+PUBLIC_API_BASE=https://你的-worker-地址.workers.dev
+```
+
+这个值只是公开的 API 服务地址，不能填写 API Key。重新运行 Pages 工作流，让前端构建携带新的后端地址。
+
+检查后端 `/api/status` 返回 `aiConfigured: true` 和 `reviewsAvailable: true`。完成测评后，用户会看到 AI 解读同意选项。需要使用真实密钥进行一次端到端联调；本地测试使用的模拟响应不代表真实模型调用已经成功。
+
+## 4. 可选：通过 GitHub Actions 更新后端
+
+先完成 Cloudflare D1 创建和 Worker secret 配置，再设置仓库 Actions Secrets：
+
+- `CLOUDFLARE_API_TOKEN`：对目标账户的 Worker 与 D1 有必要部署权限。
+- `CLOUDFLARE_ACCOUNT_ID`：对应 Cloudflare 账户 ID。
+
+设置仓库 Actions Variable：
+
+- `D1_DATABASE_ID`：D1 数据库 ID。
+
+随后手动运行 **Deploy AI backend to Cloudflare**。此流程不会读取或复制模型密钥；Worker 的 `DEEPSEEK_API_KEY` 保留在 Cloudflare Secret 中。
+
+## 5. 运行边界
+
+- 首版的 Cloudflare 模型接口限制为每个访问标识每小时最多 6 次，全站每天最多 200 次；修改 `server/api.mjs` 可调整。
+- Cloudflare 的计数持久保存在 D1；本机 Node 服务的计数保存在进程内，重启会重置。
+- 本机 Node 的评价写入 `data/reviews.json`，仅供本机开发；线上 Worker 使用 D1。
+- 页面展示最近 24 条评价，总评分与星级分布包含全部公开评价。
+- 公开页面上线前使用你自己的模型账户与运行账户进行验收，按实际模型响应和访问量调整服务限额。
