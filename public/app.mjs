@@ -4,6 +4,7 @@ const app=document.getElementById('app'),modal=document.getElementById('modal');
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const state={answers:{},step:0,note:'',report:null,sample:false,style:'letter',quote:0,nickname:'',showScore:false,checks:[],status:{aiConfigured:false,reviewsAvailable:false},reviews:null,filter:0,busy:false};
 let controller=null,toastTimer;
+let aiConnection='checking';
 const storage={get(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}},set(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch{return false;}}};
 function persistQuiz(){try{sessionStorage.setItem('luck-quiz',JSON.stringify({answers:state.answers,step:state.step,note:state.note}));}catch{}}
 function restoreQuiz(){try{const saved=JSON.parse(sessionStorage.getItem('luck-quiz'));if(saved?.answers){state.answers=Object.fromEntries(QUESTIONS.filter(q=>q.options.some(o=>o[0]===saved.answers[q.id])).map(q=>[q.id,saved.answers[q.id]]));state.step=Math.min(6,Math.max(0,Number(saved.step)||0));state.note=typeof saved.note==='string'?saved.note.slice(0,400):'';}}catch{}}
@@ -13,6 +14,30 @@ async function api(path,options={}){
   const response=await fetch(apiBase+path,{...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...options.headers}});
   let data;try{data=await response.json();}catch{throw new Error('服务暂时没有寄来回音，你可以先体验基础来信。');}
   if(!response.ok)throw new Error(data.error||'服务暂时繁忙，请稍后再试。');return data;
+}
+async function checkAiStatus(){
+  aiConnection='checking';
+  const refresh=()=>{if(location.hash==='#quiz'&&state.step===6&&!state.busy)renderQuiz();};
+  refresh();
+  try{
+    state.status=await api('/api/status',{cache:'no-store',signal:AbortSignal.timeout(8000)});
+    aiConnection=state.status.aiConfigured?'ready':'disabled';
+  }catch{
+    state.status={aiConfigured:false,reviewsAvailable:false};
+    aiConnection='unreachable';
+  }
+  refresh();
+}
+
+function quizSubmission(){
+  if(aiConnection==='ready')return `
+    <div class="quiz-extras"><h3>让 AI 为你写一封深度来信</h3><p class="small-note">根据你的选择和补充，梳理五个维度的状态，给出未来七天的行动建议。</p></div>
+    <label class="checkbox-row"><input id="ai-consent" type="checkbox"><span>我同意将本次回答和补充内容发送给 ${esc(state.status.providerLabel||'阿里云百炼')}，生成娱乐解读。</span></label>
+    <div class="quiz-nav"><button class="link-button" type="button" data-action="privacy">查看数据说明</button><button class="primary" type="button" data-action="analyze">写下我的好运来信 <span aria-hidden="true">↗</span></button></div>`;
+  if(aiConnection==='checking')return '<div class="quiz-extras" role="status"><h3>正在连接 AI 服务</h3><p class="small-note">你的回答已经保存在这次会话中。</p></div>';
+  const heading=aiConnection==='disabled'?'AI 深度解读暂未启用':'暂时连不上 AI 服务';
+  return `<div class="quiz-extras" role="status"><h3>${heading}</h3><p class="small-note">你的回答已保留。你可以重新连接，也可以选择用固定规则生成基础来信。</p></div>
+    <div class="quiz-nav"><button class="link-button" type="button" data-action="basic">收取基础来信</button><button class="primary" type="button" data-action="retry-ai">重新连接 AI</button></div>`;
 }
 function toast(message){const el=document.getElementById('toast');clearTimeout(toastTimer);el.textContent=message;el.hidden=false;toastTimer=setTimeout(()=>el.hidden=true,3200);}
 function navigate(route){if(location.hash==='#'+route)renderRoute();else location.hash=route;}
@@ -38,7 +63,7 @@ function renderQuiz(){
   if(state.busy){renderPending();return;}
   const final=state.step===6,q=QUESTIONS[state.step];
   app.innerHTML=`<section class="quiz-shell"><div class="quiz-top"><button type="button" data-action="quiz-back">← ${state.step===0?'返回首页':'上一题'}</button><span>${final?'写下最后一点心事':`第 ${state.step+1} / 6 题`}</span></div><div class="progress" role="progressbar" aria-label="答题进度" aria-valuenow="${Math.min(state.step,6)}" aria-valuemin="0" aria-valuemax="6"><span style="width:${state.step/6*100}%"></span></div>
-  ${final?`<div class="quiz-heading"><div class="eyebrow">ONE LAST LITTLE THING</div><h1>还有什么，想放进这封信里？</h1><p>可以留下一点心事，也可以直接收信。</p></div><label class="field" for="personal-note">一句想说的话 <span class="small-note">选填 · 不需要填写真实姓名等身份信息</span><textarea id="personal-note" maxlength="400" placeholder="例如：想开始一个新计划，但总是有点犹豫……">${esc(state.note)}</textarea></label><div class="quiz-extras"><h3>${state.status.aiConfigured?'让 AI 为你写一封深度来信':'先收一封基础体验来信'}</h3><p class="small-note">${state.status.aiConfigured?'根据你的选择和补充，梳理五个维度的状态，给出未来七天的行动建议。':'根据六个回答整理状态、行动建议和专属签语。当前体验版不会调用 AI，补充心事也不会上传。'}</p></div>${state.status.aiConfigured?`<label class="checkbox-row"><input id="ai-consent" type="checkbox"><span>我同意将本次回答和补充内容发送给 ${esc(state.status.providerLabel||'阿里云百炼')}，生成娱乐解读。<button class="link-button" type="button" data-action="privacy">查看数据说明</button></span></label>`:''}<div class="quiz-nav"><span class="small-note">${state.status.aiConfigured?'AI 深度解读 · 仅供自我探索':'基础体验 · 免费收信'}</span><button class="primary" type="button" data-action="analyze">${state.status.aiConfigured?'写下我的好运来信':'收取我的体验来信'} <span aria-hidden="true">↗</span></button></div><p id="quiz-error" class="inline-error" role="alert"></p>`:
+  ${final?`<div class="quiz-heading"><div class="eyebrow">ONE LAST LITTLE THING</div><h1>还有什么，想放进这封信里？</h1><p>可以留下一点心事，也可以直接收信。</p></div><label class="field" for="personal-note">一句想说的话 <span class="small-note">选填 · 不需要填写真实姓名等身份信息</span><textarea id="personal-note" maxlength="400" placeholder="例如：想开始一个新计划，但总是有点犹豫……">${esc(state.note)}</textarea></label>${quizSubmission()}<p id="quiz-error" class="inline-error" role="alert"></p>`:
   `<div class="quiz-heading"><h1>${esc(q.title)}</h1><p>${esc(q.hint)}</p></div><fieldset class="quiz-options"><legend class="sr-only">${esc(q.title)}</legend>${q.options.map((option,index)=>`<label class="quiz-option"><input type="radio" name="${q.id}" value="${option[0]}" ${state.answers[q.id]===option[0]?'checked':''}><span class="option-mark" aria-hidden="true">${state.answers[q.id]===option[0]?'✓':String.fromCharCode(65+index)}</span><span><strong>${esc(option[1])}</strong><small>${esc(option[2])}</small></span></label>`).join('')}</fieldset><div class="quiz-nav"><span class="small-note">按你的真实感受选择就好。</span><button class="primary" type="button" data-action="quiz-next" ${state.answers[q.id]?'':'disabled'}>${state.step===5?'回答好了':'下一题'} <span aria-hidden="true">→</span></button></div>`}</section>`;
 }
 
@@ -46,11 +71,12 @@ function renderPending(){app.innerHTML=`<section class="pending"><span class="pe
 
 async function analyze(useBasic=false){
   const consent=document.getElementById('ai-consent')?.checked;
-  if(state.status.aiConfigured&&!useBasic&&!consent){document.getElementById('quiz-error').textContent='请先确认数据使用说明，再收取 AI 来信。';return;}
+  if(!useBasic&&aiConnection!=='ready'){await checkAiStatus();return;}
+  if(!useBasic&&!consent){document.getElementById('quiz-error').textContent='请先确认数据使用说明，再收取 AI 来信。';return;}
   state.note=document.getElementById('personal-note')?.value.slice(0,400)||state.note;persistQuiz();
   state.busy=true;renderPending();const activeController=new AbortController();controller=activeController;
   try{
-    const report=state.status.aiConfigured&&!useBasic?await api('/api/analyze',{method:'POST',signal:activeController.signal,body:JSON.stringify({answers:state.answers,note:state.note,consent:true})}):buildSampleReport(state.answers);
+    const report=useBasic?buildSampleReport(state.answers):await api('/api/analyze',{method:'POST',signal:activeController.signal,body:JSON.stringify({answers:state.answers,note:state.note,consent:true})});
     if(activeController.signal.aborted)return;
     state.report=report;
     state.sample=false;state.quote=0;state.checks=[];state.busy=false;navigate('result');
@@ -156,6 +182,7 @@ document.addEventListener('click',async event=>{
   else if(action==='quiz-next'){if(!state.answers[QUESTIONS[state.step]?.id])return;state.step++;persistQuiz();renderQuiz();window.scrollTo({top:0,behavior:'instant'});}
   else if(action==='quiz-back'){if(state.step===0)navigate('home');else{state.step--;persistQuiz();renderQuiz();}}
   else if(action==='analyze')await analyze();else if(action==='basic')await analyze(true);
+  else if(action==='retry-ai')await checkAiStatus();
   else if(action==='cancel-analysis'){controller?.abort();state.busy=false;renderQuiz();}
   else if(action==='save')saveReport();else if(action==='saved')loadSaved();
   else if(action==='download')await exportImage();else if(action==='native-share')await exportImage(true);else if(action==='copy-link')await copyLink();
@@ -179,4 +206,4 @@ document.addEventListener('submit',async event=>{
 modal.addEventListener('click',event=>{if(event.target===modal){const box=modal.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)modal.close();}});
 window.addEventListener('hashchange',renderRoute);
 renderRoute();
-api('/api/status').then(status=>{state.status=status;if(location.hash==='#quiz'&&state.step===6&&!state.busy)renderQuiz();}).catch(()=>{});
+checkAiStatus();
