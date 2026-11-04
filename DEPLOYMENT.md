@@ -27,12 +27,12 @@ npx --yes wrangler@4 login
 
 ```sh
 npx --yes wrangler@4 d1 migrations apply luck-letter --remote
-npx --yes wrangler@4 secret put DEEPSEEK_API_KEY
+npx --yes wrangler@4 secret put DASHSCOPE_API_KEY
 npx --yes wrangler@4 secret put RATE_LIMIT_SALT
 npx --yes wrangler@4 deploy
 ```
 
-`secret put` 会以交互方式接收密钥，避免写入命令参数和仓库。`RATE_LIMIT_SALT` 使用一段足够长的随机字符。`DEEPSEEK_API_KEY` 从你自己的 DeepSeek 开放平台获取。
+`secret put` 会以交互方式接收密钥，避免写入命令参数和仓库。`RATE_LIMIT_SALT` 使用一段足够长的随机字符。`DASHSCOPE_API_KEY` 从你自己的 阿里云百炼 开放平台获取。
 
 部署成功后，Worker 同时可以提供整站页面、`/api/status`、`/api/analyze`、`/api/reviews`，并在 D1 保存公开评价与限流计数。默认允许的外部前端来源为 `https://masterlkk.github.io`；如果使用自定义域名，更新 `ALLOWED_ORIGINS`（多个来源以逗号分隔）。
 
@@ -59,7 +59,7 @@ PUBLIC_API_BASE=https://你的-worker-地址.workers.dev
 
 - `D1_DATABASE_ID`：D1 数据库 ID。
 
-随后手动运行 **Deploy AI backend to Cloudflare**。此流程不会读取或复制模型密钥；Worker 的 `DEEPSEEK_API_KEY` 保留在 Cloudflare Secret 中。
+随后手动运行 **Deploy AI backend to Cloudflare**。此流程不会读取或复制模型密钥；Worker 的 `DASHSCOPE_API_KEY` 保留在 Cloudflare Secret 中。
 
 ## 5. 运行边界
 
@@ -68,3 +68,7 @@ PUBLIC_API_BASE=https://你的-worker-地址.workers.dev
 - 本机 Node 的评价写入 `data/reviews.json`，仅供本机开发；线上 Worker 使用 D1。
 - 页面展示最近 24 条评价，总评分与星级分布包含全部公开评价。
 - 公开页面上线前使用你自己的模型账户与运行账户进行验收，按实际模型响应和访问量调整服务限额。
+
+## 当前线上后端
+
+当前前端默认连接 Sites 托管的独立 API，地址记录在 `site.config.json` 中。`PUBLIC_API_BASE` 仓库变量仍可覆盖这个默认值。Sites 通过原生 Secret 保存 `DASHSCOPE_API_KEY` 与专属 `AI_BASE_URL`，D1 保存公开评价和调用计数。通义千问默认模型为 `qwen-plus`。现有 Cloudflare 自部署配置保留为替代部署方式。

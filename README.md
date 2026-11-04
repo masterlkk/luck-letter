@@ -10,7 +10,7 @@
 - 1080 × 1440 PNG 导出，支持系统分享的设备可直接分享图片。
 - 本机保存与重读来信、清除本机记录。
 - 自愿授权的星级评价、建议有用性反馈、评价附图、完整星级分布。
-- DeepSeek-Flash 服务端接入，含请求校验、超时、响应结构检查和调用频次限制。
+- 阿里云百炼 Qwen-Plus 服务端接入，含请求校验、超时、响应结构检查和调用频次限制。
 - GitHub Pages 前端发布、Cloudflare Worker + D1 后端发布配置。
 
 
@@ -28,9 +28,9 @@ npm start
 如需测试真实 AI，将 `.env.example` 复制为 `.env`，只在本机文件中配置：
 
 ```dotenv
-DEEPSEEK_API_KEY=在这里填写你自己的密钥
-DEEPSEEK_MODEL=deepseek-flash
-DEEPSEEK_BASE_URL=https://api.deepseek.com
+DASHSCOPE_API_KEY=在这里填写你自己的密钥
+AI_MODEL=qwen-plus
+AI_BASE_URL=复制百炼业务空间的专属 Base URL
 ```
 
 `.env`、本机评价数据和构建产物已加入 Git 忽略规则。不要把密钥放进 `public/`、`docs/`、`config.js` 或仓库变量 `PUBLIC_API_BASE`。
@@ -51,7 +51,7 @@ npm run build
 - GitHub Pages 只发布静态文件，模型密钥始终保留在独立后端。
 - 未接后端时，Pages 可以完整体验答题、结果页、保存记录和图片导出。
 - 接上 Cloudflare Worker + D1 后，再启用 AI 深度解读与服务端评价。
-- 默认模型为 `deepseek-flash`。模型名称可通过服务端环境变量调整，接口以 [DeepSeek 官方文档](https://api-docs.deepseek.com/api/create-chat-completion/) 为准。
+- 默认模型为 `qwen-plus`。模型名称可通过服务端环境变量调整，接口以 [阿里云百炼 官方文档](https://api-docs.deepseek.com/api/create-chat-completion/) 为准。
 
 ## 目录
 
@@ -67,6 +67,11 @@ tests/                  Node.js 测试
 
 ## 数据处理
 
-基础体验在浏览器中生成。AI 模式只有在用户明确勾选同意后，才发送六个回答与选填补充给 DeepSeek；应用不在服务端保存问卷内容。公开评价有单独的授权选项，签语图片不含原始回答或补充心事。
+基础体验在浏览器中生成。AI 模式只有在用户明确勾选同意后，才发送六个回答与选填补充给 阿里云百炼；应用不在服务端保存问卷内容。公开评价有单独的授权选项，签语图片不含原始回答或补充心事。
 
 状态指数是基于问卷的娱乐表达，未来七日内容是行动安排，不是事件概率、医疗诊断或投资意见。首次真实模型联调与生产后端配置需使用站点所有者自己的 API Key 和 Cloudflare 账户。
+
+
+## 当前 AI 服务
+
+网站采用阿里云百炼 `qwen-plus`。独立 API 地址由 `site.config.json` 管理，Sites 托管的 Cloudflare Worker 保存模型密钥并连接 D1 评价数据库。密钥和业务空间专属地址保存在托管平台的 Secret 中，不进入 GitHub 或浏览器配置。原有 Cloudflare 自部署脚本仍可使用，部署说明见 DEPLOYMENT.md。

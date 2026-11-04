@@ -20,6 +20,33 @@ jobs:
       - run: npm run build
         env:
           PUBLIC_API_BASE: ${{ vars.PUBLIC_API_BASE }}
+      - name: Verify AI service before publication
+        env:
+          PUBLIC_API_BASE: ${{ vars.PUBLIC_API_BASE }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { readFile } from 'node:fs/promises';
+          const config = JSON.parse(await readFile('site.config.json', 'utf8'));
+          const apiBase = (process.env.PUBLIC_API_BASE || config.apiBase || '').replace(/\/$/, '');
+          if (!apiBase) process.exit(0);
+          const origin = 'https://masterlkk.github.io';
+          const status = await fetch(apiBase + '/api/status', {
+            headers: { Origin: origin }, signal: AbortSignal.timeout(20000),
+          });
+          assert.equal(status.status, 200, 'AI backend must be reachable before publishing');
+          assert.equal(status.headers.get('Access-Control-Allow-Origin'), origin);
+          const details = await status.json();
+          assert.equal(details.aiConfigured, true);
+          assert.equal(details.reviewsAvailable, true);
+          const preflight = await fetch(apiBase + '/api/analyze', {
+            method: 'OPTIONS', signal: AbortSignal.timeout(20000),
+            headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'Content-Type' },
+          });
+          assert.equal(preflight.status, 204);
+          assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), origin);
+          console.log('AI backend is available and permits requests from GitHub Pages.');
+          JS
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

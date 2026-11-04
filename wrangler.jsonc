@@ -4,6 +4,6 @@
   "main": "worker/index.mjs",
   "compatibility_date": "2026-11-03",
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
-  "vars": { "DEEPSEEK_MODEL": "deepseek-flash", "ALLOWED_ORIGINS": "https://masterlkk.github.io" },
+  "vars": { "AI_PROVIDER": "aliyun", "AI_MODEL": "qwen-plus", "AI_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1", "ALLOWED_ORIGINS": "https://masterlkk.github.io" },
   "d1_databases": [{ "binding": "DB", "database_name": "luck-letter", "database_id": "REPLACE_WITH_D1_DATABASE_ID", "migrations_dir": "worker/migrations" }]
 }

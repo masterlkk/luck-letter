@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {handleApi,callDeepSeek,validateReview} from '../server/api.mjs';
+import {handleApi,callDeepSeek,callModel,validateReview} from '../server/api.mjs';
 import {SAMPLE_ANSWERS,buildSampleReport} from '../public/domain.mjs';
 const request=(path,body,origin)=>new Request('https://luck.example'+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(origin?{Origin:origin}:{})},body:body?JSON.stringify(body):undefined});
 function memoryStore(){const reviews=[],counts=new Map();return {async allow(kind,id,max){const key=kind+id;const count=(counts.get(key)||0)+1;counts.set(key,count);return count<=max;},async listReviews(){return {reviews,count:reviews.length,average:reviews.length?reviews.reduce((s,r)=>s+r.rating,0)/reviews.length:null,distribution:[1,2,3,4,5].map(n=>reviews.filter(r=>r.rating===n).length)};},async addReview(r){reviews.push(r);}};}
@@ -46,4 +46,21 @@ test('model calls are rate limited before reaching the provider',async()=>{
 test('oversized and non-JSON requests are rejected',async()=>{
   const store=memoryStore();const big=await handleApi(request('/api/reviews',{note:'x'.repeat(13000)}),{},store);assert.equal(big.status,413);
   const response=await handleApi(new Request('https://luck.example/api/reviews',{method:'POST',body:'text'}),{},store);assert.equal(response.status,415);
+});
+
+test('Aliyun uses its workspace endpoint and JSON-compatible Qwen parameters',async()=>{
+  const env={AI_PROVIDER:'aliyun',DASHSCOPE_API_KEY:'private-test',AI_MODEL:'qwen-plus',AI_BASE_URL:'https://workspace.example.maas.aliyuncs.com/compatible-mode/v1'};
+  const result=await callModel({answers:SAMPLE_ANSWERS},env,async(url,options)=>{
+    assert.equal(url,env.AI_BASE_URL+'/chat/completions');assert.equal(options.headers.Authorization,'Bearer private-test');
+    const body=JSON.parse(options.body);assert.equal(body.model,'qwen-plus');assert.equal(body.enable_thinking,false);assert.equal(body.response_format.type,'json_object');assert.equal(body.thinking,undefined);
+    return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(buildSampleReport(SAMPLE_ANSWERS)),reasoning_content:'private reasoning'}}]});
+  });assert.equal(result.mode,'ai');assert.equal(result.dimensions.length,5);assert.ok(!JSON.stringify(result).includes('private-test'));
+});
+test('Aliyun provider and readiness are disclosed without exposing the credential or workspace',async()=>{
+  const response=await handleApi(request('/api/status'),{AI_PROVIDER:'aliyun',DASHSCOPE_API_KEY:'private-test',AI_BASE_URL:'https://workspace.example.maas.aliyuncs.com/compatible-mode/v1'},memoryStore());
+  const data=await response.json();assert.equal(data.providerLabel,'阿里云百炼');assert.equal(data.aiConfigured,true);assert.ok(!JSON.stringify(data).includes('private-test'));assert.ok(!JSON.stringify(data).includes('workspace.example'));
+});
+test('provider failure does not expose upstream messages or credentials to visitors',async()=>{
+  const result=await handleApi(request('/api/analyze',{answers:SAMPLE_ANSWERS,consent:true}),{AI_PROVIDER:'aliyun',DASHSCOPE_API_KEY:'private-test'},memoryStore(),'test',async()=>Response.json({error:{message:'private-test should never be shown',code:'invalid_api_key'}},{status:401}));
+  assert.equal(result.status,502);assert.ok(!(await result.text()).includes('private-test'));
 });

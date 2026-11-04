@@ -26,18 +26,38 @@ export function validateReview(body) {
   return {rating:body.rating,helpful:body.helpful,note,nickname:clean(body.nickname,16)||'一位收信人',quote,archetype,style:body.style==='ticket'?'ticket':'letter',mode:body.mode==='ai'?'ai':'experience',createdAt:new Date().toISOString()};
 }
 
-export async function callDeepSeek(body,env,fetcher=fetch) {
+export function modelConfiguration(env) {
+  const provider=env.AI_PROVIDER||(env.DEEPSEEK_API_KEY?'deepseek':'aliyun');
+  if(!['aliyun','deepseek'].includes(provider))throw new HttpError(500,'模型服务配置有误。');
+  return provider==='aliyun'?{
+    provider,label:'阿里云百炼',model:env.AI_MODEL||'qwen-plus',
+    key:env.DASHSCOPE_API_KEY||env.AI_API_KEY||'',
+    base:env.AI_BASE_URL||env.DASHSCOPE_BASE_URL||'https://dashscope.aliyuncs.com/compatible-mode/v1'
+  }:{provider,label:'DeepSeek',model:env.AI_MODEL||env.DEEPSEEK_MODEL||'deepseek-flash',key:env.AI_API_KEY||env.DEEPSEEK_API_KEY||'',base:env.AI_BASE_URL||env.DEEPSEEK_BASE_URL||'https://api.deepseek.com'};
+}
+
+export async function callModel(body,env,fetcher=fetch) {
   const answers=normalizeAnswers(body.answers),note=clean(body.note,400);
-  if(!env.DEEPSEEK_API_KEY)throw new HttpError(503,'深度解读暂未开放，你可以先体验基础来信。');
-  const base=new URL(env.DEEPSEEK_BASE_URL||'https://api.deepseek.com');
+  const config=modelConfiguration(env);
+  if(!config.key)throw new HttpError(503,'深度解读暂未开放，你可以先体验基础来信。');
+  const base=new URL(config.base);
   if(base.protocol!=='https:' && !(env.ALLOW_LOCAL_PROVIDER==='true'&&['localhost','127.0.0.1'].includes(base.hostname)))throw new HttpError(500,'模型服务配置有误。');
-  const response=await fetcher(base.toString().replace(/\/$/,'')+'/chat/completions',{method:'POST',signal:AbortSignal.timeout(65000),headers:{'Content-Type':'application/json',Authorization:`Bearer ${env.DEEPSEEK_API_KEY}`},body:JSON.stringify({model:env.DEEPSEEK_MODEL||'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'low',max_tokens:8192,response_format:{type:'json_object'},messages:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({answers:answerLabels(answers),profile:calculateProfile(answers),personalNote:note})}]})});
-  if(!response.ok)throw new HttpError(response.status===429?429:502,response.status===429?'深度解读当前比较繁忙，请稍后再试。':'深度解读暂时没有寄达，请稍后重试。');
+  const parameters=config.provider==='aliyun'?{enable_thinking:false}:{thinking:{type:'enabled'},reasoning_effort:'low'};
+  const response=await fetcher(base.toString().replace(/\/$/,'')+'/chat/completions',{method:'POST',signal:AbortSignal.timeout(65000),headers:{'Content-Type':'application/json',Authorization:`Bearer ${config.key}`},body:JSON.stringify({model:config.model,...parameters,max_tokens:8192,response_format:{type:'json_object'},messages:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({answers:answerLabels(answers),profile:calculateProfile(answers),personalNote:note})}]})});
+  if(!response.ok){
+    const error=new HttpError(response.status===429?429:502,response.status===429?'深度解读当前比较繁忙，请稍后再试。':'深度解读暂时没有寄达，请稍后重试。');
+    error.providerStatus=response.status;
+    try{const detail=await response.json();const code=detail.error?.code||detail.code;error.providerCode=typeof code==='string'&&/^[a-zA-Z0-9_.-]{1,100}$/.test(code)?code:'upstream_error';}catch{error.providerCode='upstream_error';}
+    throw error;
+  }
   let data;try{data=await response.json();}catch{throw new HttpError(502,'深度解读返回异常，请重试。');}
   if(data.choices?.[0]?.finish_reason!=='stop')throw new HttpError(502,'这封来信尚未写完，请再试一次。');
   let parsed;try{parsed=JSON.parse(data.choices[0].message.content);}catch{throw new HttpError(502,'这封来信的格式有误，请重试。');}
   try{return validateModelReport(parsed,answers);}catch{throw new HttpError(502,'来信内容未完整生成，请重试。');}
 }
+
+// Compatibility for existing integrations and tests.
+export const callDeepSeek=callModel;
 
 export async function handleApi(request,env,store,clientId='local',fetcher=fetch) {
   const url=new URL(request.url),origin=request.headers.get('Origin');
@@ -47,7 +67,7 @@ export async function handleApi(request,env,store,clientId='local',fetcher=fetch
   if(origin&&!sameOrigin&&!allowed.includes(origin))return json({error:'此来源暂未开放。'},403);
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{...cors,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'600'}});
   try {
-    if(url.pathname==='/api/status'&&request.method==='GET')return json({aiConfigured:Boolean(env.DEEPSEEK_API_KEY),reviewsAvailable:Boolean(store),model:env.DEEPSEEK_MODEL||'deepseek-flash'},200,cors);
+    if(url.pathname==='/api/status'&&request.method==='GET'){const config=modelConfiguration(env);return json({aiConfigured:Boolean(config.key),reviewsAvailable:Boolean(store),model:config.model,provider:config.provider,providerLabel:config.label},200,cors);}
     if(url.pathname==='/api/reviews'&&request.method==='GET')return json(store?await store.listReviews():{reviews:[],count:0,average:null,distribution:[0,0,0,0,0]},200,cors);
     if(request.method!=='POST')throw new HttpError(404,'没有找到这个入口。');
     if(!['/api/analyze','/api/reviews'].includes(url.pathname))throw new HttpError(404,'没有找到这个入口。');
@@ -56,10 +76,10 @@ export async function handleApi(request,env,store,clientId='local',fetcher=fetch
     if(url.pathname==='/api/analyze'){
       if(body.consent!==true)throw new HttpError(400,'请先确认 AI 解读的数据使用说明。');
       try{normalizeAnswers(body.answers);}catch{throw new HttpError(400,'请完成全部六道题。');}
-      if(!env.DEEPSEEK_API_KEY)throw new HttpError(503,'深度解读暂未开放，你可以先体验基础来信。');
+      if(!modelConfiguration(env).key)throw new HttpError(503,'深度解读暂未开放，你可以先体验基础来信。');
       if(!await store.allow('analysis',clientId,6,3600000))throw new HttpError(429,'你已经收到了几封来信，休息一会再来吧。');
       if(!await store.allow('analysis-global','all',200,86400000))throw new HttpError(429,'今天的来信名额已满，明天再来看看。');
-      return json(await callDeepSeek(body,env,fetcher),200,cors);
+      return json(await callModel(body,env,fetcher),200,cors);
     }
     const review=validateReview(body);
     if(!await store.allow('review',clientId,5,3600000))throw new HttpError(429,'你已经留下了心意，稍后再来吧。');
