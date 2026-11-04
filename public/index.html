@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f7f5ee">
-  <meta name="description" content="回答六个问题，收到一封写给最近的你的好运来信。近期状态解读、七日行动建议和专属签语分享卡。">
-  <meta property="og:title" content="好运来信 · 写给最近的你">
-  <meta property="og:description" content="把一点温柔，也留给自己。六个问题，一封私人来信。">
-  <title>好运来信 · 写给最近的你</title>
+  <meta name="description" content="六题趣味运势测评，可选抽一张塔罗。收取近期状态解读、七日行动建议和签语分享卡。">
+  <meta property="og:title" content="好运来信 · 六题趣味运势测评">
+  <meta property="og:description" content="回答六道题，可选抽一张塔罗。看看最近的状态，找到未来七天可以做的一小步。">
+  <title>好运来信 · 六题趣味运势测评</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <script src="./config.js" defer></script>
@@ -17,10 +17,10 @@
   <a class="skip-link" href="#app">跳到主要内容</a>
   <header class="site-header">
     <a class="brand" href="#home" aria-label="好运来信首页"><span class="brand-star" aria-hidden="true">✳</span><span>好运来信<small>A LETTER FOR YOU</small></span></a>
-    <nav aria-label="主要导航"><a href="#about">关于这封信</a><a href="#reviews">收信人的回响</a><button class="nav-letter" type="button" data-action="saved">我的来信 <span aria-hidden="true">↗</span></button></nav>
+    <nav aria-label="主要导航"><button class="nav-letter" type="button" data-action="saved">我的来信 <span aria-hidden="true">↗</span></button></nav>
   </header>
   <main id="app" aria-live="polite"></main>
-  <footer class="site-footer"><a class="brand-footer" href="#home">✳ 好运来信</a><span>愿你在自己的节奏里，遇见好事情。</span><div><button type="button" data-action="privacy">隐私与数据</button><button type="button" data-action="clear">清除本机记录</button><span>娱乐测评 · 自我探索</span></div></footer>
+  <footer class="site-footer"><a class="brand-footer" href="#home">✳ 好运来信</a><div><a href="#reviews">大家的回信</a><a href="#about">关于测评</a><button type="button" data-action="ai-help">AI 接入</button><button type="button" data-action="privacy">隐私与数据</button><button type="button" data-action="clear">清除本机记录</button></div></footer>
   <dialog id="modal" class="modal" aria-labelledby="modal-title"><div id="modal-content"></div></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <noscript><p class="noscript">请开启浏览器的 JavaScript，收取属于你的好运来信。</p></noscript>

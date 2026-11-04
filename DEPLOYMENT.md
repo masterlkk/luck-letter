@@ -1,5 +1,16 @@
 # 部署说明
 
+## 接入 AI
+
+网站通过独立的 HTTPS 后端调用阿里云百炼。现有代码已经支持通义千问 `qwen-plus`。本机可在项目目录运行 `npm run dev`，再访问 [本机预览](http://127.0.0.1:4173/)。
+
+1. 在阿里云百炼创建按量付费的 API Key，并复制同一业务空间的 OpenAI 兼容 Base URL。曾在聊天中发送的密钥请在百炼控制台撤销并换新。 [百炼 Base URL 文档](https://help.aliyun.com/zh/model-studio/base-url)
+2. 将本项目后端部署到目标用户能访问的 HTTPS 地址。本仓库提供下文的 Worker 部署方式。将新密钥配置在后端的 `DASHSCOPE_API_KEY`，专属地址配置在 `AI_BASE_URL`，模型使用 `AI_MODEL=qwen-plus`。将 `ALLOWED_ORIGINS` 设为 `https://masterlkk.github.io`。本机测试时这些值填在项目的 `.env`，密钥只保存在服务端。
+3. 打开 [仓库 Actions Variables](https://github.com/masterlkk/luck-letter/settings/variables/actions)，设置 `PUBLIC_API_BASE` 为后端 HTTPS 地址，只填域名和协议，例如 `https://api.example.com`。然后重新运行 [Pages 发布工作流](https://github.com/masterlkk/luck-letter/actions/workflows/pages.yml)。
+4. 用实际访问网站的网络打开后端的 `/api/status`。看到 `aiConfigured: true` 表示服务可达且有配置。再从网站答完六题、同意数据使用并提交，看到「AI 深度来信」才算验收完成。
+
+若目标网络访问 `/api/status` 返回 403，而 GitHub 的部署检测通过，应先处理后端域名的访问拦截，或换一个目标用户能访问的后端地址。
+
 ## 1. GitHub Pages 前端
 
 仓库：`masterlkk/luck-letter`。
@@ -23,7 +34,7 @@ npm run build
 npx --yes wrangler@4 login
 ```
 
-将 `wrangler.jsonc` 中 `REPLACE_WITH_D1_DATABASE_ID` 替换为 D1 数据库 ID，然后执行：
+将 `wrangler.jsonc` 中 `REPLACE_WITH_D1_DATABASE_ID` 替换为 D1 数据库 ID，并把 `AI_BASE_URL` 换成与密钥对应的业务空间地址。然后执行以下命令。
 
 ```sh
 npx --yes wrangler@4 d1 migrations apply luck-letter --remote

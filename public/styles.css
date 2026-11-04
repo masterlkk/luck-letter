@@ -9,3 +9,53 @@
 @media(max-width:680px){.site-header{padding:18px 20px}.brand{font-size:21px;gap:8px;letter-spacing:2px}.brand-star{font-size:35px}.brand small{font-size:7px;letter-spacing:1.6px}.site-header nav>a{display:none}.nav-letter{font-size:10px;padding:7px 13px}.home-hero{display:flex;flex-direction:column;margin:42px 24px 38px;gap:26px;align-items:stretch}.hero-copy{text-align:center}.hero-copy .eyebrow{justify-content:center}.hero-copy h1{font-size:41px;line-height:1.6;margin:18px 0}.hero-description{margin:auto;font-size:12px;max-width:320px}.hero-actions{justify-content:center;margin:25px 0 15px;gap:22px}.hero-facts{justify-content:center;font-size:9px;gap:12px}.hero-facts span+span::before{margin-right:12px}.hero-visual{max-width:350px;width:100%;margin:auto;min-height:0;padding:20px 25px}.hero-visual::after{font-size:8px;right:0}.hero-visual .poster{padding:25px}.hero-visual .poster-quote{font-size:27px}.hero-caption{margin-top:19px}.home-promise{margin:0 24px;padding:26px 0;grid-template-columns:1fr;gap:22px}.home-promise>div{gap:10px}.home-promise p{font-size:11px}.home-bottom{margin:37px 24px 0;align-items:flex-start;flex-direction:column;gap:20px}.home-bottom h2{font-size:24px}.site-footer{margin:44px 24px 0;padding:24px 0;flex-direction:column;align-items:flex-start;gap:12px}.site-footer>div{margin-left:0;flex-wrap:wrap;gap:15px;font-size:10px}.quiz-shell{margin:30px 23px 0;min-height:580px}.quiz-heading{margin-top:30px}.quiz-heading h1{font-size:26px}.quiz-option{padding:15px 16px;gap:13px}.quiz-option strong{font-size:12px}.quiz-option small{font-size:10px}.quiz-extras{padding:18px}.quiz-nav .primary{min-width:130px}.pending{margin:30px 24px;min-height:500px;padding-top:65px}.result-wrap{margin:23px 20px 0}.result-top{font-size:10px;margin-bottom:18px}.result-top-right{gap:14px}.result-top-right .pill{display:none}.mode-banner{padding:11px 13px;font-size:10px;gap:10px;align-items:flex-start}.result-layout{grid-template-columns:1fr;gap:33px}.letter-paper{padding:25px 24px 23px}.letter-paper h1{font-size:30px;margin:20px 0;letter-spacing:1px}.letter-to{font-size:16px}.letter-body{font-size:12px;line-height:2.1}.letter-kicker .eyebrow{font-size:8px;letter-spacing:1.5px}.letter-bottom{margin-top:20px;padding-top:17px}.letter-bottom .small-note{font-size:9px;max-width:150px}.report-section{margin-top:29px}.section-head h2{font-size:21px}.section-head>span{font-size:8px}.strength-block{padding:19px;gap:13px}.strength-block h3{font-size:18px}.strength-block p{font-size:11px}.dimension-overview{gap:8px}.dimension-small strong{font-size:23px}.dimension-small span{font-size:9px}.dimension-detail summary{flex-wrap:nowrap;gap:12px}.dimension-detail summary>span{order:0;flex-basis:auto;font-size:10px}.dimension-detail summary h3{font-size:12px;min-width:73px}.timeline{gap:13px}.timeline-item h3{font-size:15px}.timeline-item p{font-size:10px}.lucky-row{grid-template-columns:1fr 1fr;gap:18px}.lucky-row>div:last-child{grid-column:1/-1}.rating-invite{padding:19px;flex-wrap:wrap;gap:16px}.rating-invite .secondary{width:100%}.share-sidebar{position:static;max-width:390px;width:100%;margin:auto}.share-box{padding:22px}.poster{padding:27px}.poster-quote{font-size:29px}.share-heading h2{font-size:21px}.share-settings .field{font-size:12px}.share-settings input[type=text],.share-settings select{font-size:14px;min-height:43px}.share-settings .checkbox-row{font-size:11px}.share-download{font-size:13px;min-height:47px}.share-other button{font-size:11px;padding:7px}.share-fine{font-size:10px}.review-wrap,.about-wrap{margin:36px 23px 0;min-height:500px}.page-intro h1{font-size:29px;letter-spacing:2px}.page-intro p{font-size:11px}.review-grid{gap:13px}.review-card{padding:13px}.review-card .poster{padding:11px}.review-card .poster-quote{font-size:17px}.review-card .poster-label,.review-card .poster-top{font-size:6px;letter-spacing:.5px}.review-card .poster-body{padding:8px 0}.review-card .poster-bottom{font-size:6px}.review-card .poster-footer-brand{font-size:8px}.review-card .poster-identity{font-size:7px}.review-card .poster-rule{margin-bottom:8px}.review-card .poster-symbol{font-size:20px}.review-card>p{font-size:11px}.review-meta{font-size:9px;flex-wrap:wrap}.about-grid{grid-template-columns:1fr}.about-item{padding:24px}.modal{padding:23px}.field input,.field textarea,.field select{font-size:16px}.rating-picker span{width:42px;height:44px}}
 @media(max-width:360px){.hero-copy h1{font-size:35px}.result-wrap{margin-left:15px;margin-right:15px}.letter-paper{padding:22px 20px}.letter-paper h1{font-size:27px}.postmark{width:45px;height:45px;flex-basis:45px}.letter-kicker .eyebrow{letter-spacing:.8px}.dimension-detail summary{flex-wrap:wrap}.dimension-detail summary>span{order:3;flex-basis:100%}.timeline{grid-template-columns:1fr;gap:22px}.timeline-item{padding-top:14px}.timeline-item p{font-size:11px}.poster-quote{font-size:25px}.share-box{padding:17px}.review-grid{grid-template-columns:1fr}.review-card .poster{max-width:220px;margin:auto auto 18px}.review-card .poster-quote{font-size:23px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+.home-intro{grid-template-columns:minmax(0,1fr) minmax(280px,350px);gap:clamp(28px,5vw,70px);margin-top:52px;margin-bottom:58px}
+.home-intro h1{font-size:clamp(34px,5vw,62px);line-height:1.35;letter-spacing:.025em;margin:18px 0 22px}
+.home-intro .hero-description{max-width:420px;font-size:16px;line-height:1.85}
+.home-intro .hero-visual{min-height:0;padding:15px 20px 10px}
+.home-intro .hero-visual::after{display:none}
+.hero-extras{color:var(--muted);font-size:13px;margin:0}
+.site-footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.quiz-personal{display:grid;gap:18px}
+.concern-picker,.tarot-draw,.optional-note,.report-details{
+  min-width:0;border:1px solid var(--line);border-radius:12px;background:#fffcf3;padding:16px 18px
+}
+.concern-picker{margin:0}
+.concern-picker legend,.tarot-heading h2,.optional-note summary,.report-details>summary{color:var(--ink);font-size:16px;font-weight:700}
+.concern-picker legend{padding:0 5px}
+.concern-picker label{display:flex;align-items:center;gap:10px;min-height:37px;cursor:pointer}
+.concern-picker input{margin:0;accent-color:var(--green)}
+.tarot-heading{display:flex;align-items:baseline;gap:10px}
+.tarot-heading h2,.tarot-draw p,.tarot-result h2,.tarot-result p{margin:0}
+.tarot-draw p,.tarot-result p{color:var(--muted)}
+.tarot-hand{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:380px;margin:14px 0 0}
+.tarot-card{
+  display:grid;grid-template-rows:auto 1fr auto;place-items:center;gap:3px;min-width:0;min-height:108px;
+  padding:8px 4px;color:#efeaca;background:#2f4e42;border:1px solid #537064;border-radius:8px;
+  outline:1px solid #c2c7a6;outline-offset:-5px;font-size:12px;line-height:1.4
+}
+.tarot-card:hover:not(:disabled){background:#416452}
+.tarot-card:focus-visible{outline:2px solid #ab7445;outline-offset:2px}
+.tarot-card:disabled{opacity:.7}
+.tarot-card.is-revealed{opacity:1;background:#f0e8cb;color:#314a3b;outline-color:#a79d72}
+.tarot-number{font-size:10px;letter-spacing:.1em}
+.tarot-mark{font-size:31px;line-height:1}
+.tarot-reveal{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.tarot-reveal .link-button{margin-top:5px}
+.optional-note summary,.report-details>summary{cursor:pointer}
+.optional-note .field,.report-details[open] .dimension-overview{margin-top:14px}
+.tarot-result{display:flex;gap:14px;align-items:center;padding:14px 18px;background:var(--green-soft);border-radius:12px}
+.tarot-result>span{font-size:29px;color:var(--green)}
+.tarot-result h2{font-size:17px}
+
+@media(max-width:690px){
+  .home-intro{margin-top:29px;gap:18px;margin-bottom:34px}
+  .home-intro h1{font-size:clamp(29px,8.4vw,40px)}
+  .home-intro .hero-description{font-size:14px;max-width:325px}
+  .home-intro .hero-actions{gap:14px;margin:20px 0 13px}
+  .home-intro .hero-visual{max-width:270px;padding:13px 15px 6px}
+  .home-intro .hero-visual .poster{padding:19px}
+  .home-intro .hero-visual .poster-quote{font-size:24px}
+  .hero-extras{font-size:12px}
+}
